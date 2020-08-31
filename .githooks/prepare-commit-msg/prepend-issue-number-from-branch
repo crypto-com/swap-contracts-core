@@ -1,0 +1,12 @@
+#!/bin/sh
+
+if [ -z $(head -n1 "$1" | grep -o -E '#[0-9]+') ]; then
+	BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+	ISSUE_NUMBER=$(echo "$BRANCH_NAME" | sed -E 's/^feature\/#?([Ss][Ww][Aa][Pp]-[0-9]+).*/\1/g')
+	if [ "$ISSUE_NUMBER"x != "$BRANCH_NAME"x ]; then
+		sed -i.bak -e "1 s/^/Issue $ISSUE_NUMBER: /" $1
+		echo "[Prepare Commit Message Hook] Prepened issue number ${ISSUE_NUMBER} to commit message"
+	fi
+fi
+
+exit 0

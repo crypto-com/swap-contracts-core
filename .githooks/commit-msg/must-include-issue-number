@@ -1,0 +1,12 @@
+#!/bin/sh
+
+BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+if [ "$BRANCH_NAME"x == "master"x ] || [ "$BRANCH_NAME"x == "staging"x ]; then
+  exit 0
+fi
+if [ -z "$(head -n1 "$1" | grep -o -E 'SWAP-[0-9]+')" ]; then
+  echo >&2 ERROR: Commit message must include issue number.
+  exit 1
+fi
+
+exit 0
