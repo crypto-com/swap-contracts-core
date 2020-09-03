@@ -21,6 +21,22 @@
   "engines": {
     "node": ">=10"
   },
+  "license": "GPL-3.0-or-later",
+  "scripts": {
+    "lint": "yarn prettier ./test/*.ts --check",
+    "lint:fix": "yarn prettier ./test/*.ts --write",
+    "clean": "rimraf ./build/",
+    "precompile": "yarn clean",
+    "compile": "waffle .waffle.json",
+    "pretest": "yarn compile",
+    "test": "mocha",
+    "prepublishOnly": "yarn test",
+    "truffle-migrate": "./node_modules/.bin/truffle migrate --reset;",
+    "truffle-migrate-ropsten": "./node_modules/.bin/truffle migrate --reset --network ropsten"
+  },
+  "dependencies": {
+    "truffle": "5.1.42"
+  },
   "devDependencies": {
     "@truffle/hdwallet-provider": "1.0.43",
     "@types/chai": "4.2.6",
@@ -36,21 +52,5 @@
     "solc": "0.5.16",
     "ts-node": "8.5.4",
     "typescript": "3.7.3"
-  },
-  "scripts": {
-    "lint": "yarn prettier ./test/*.ts --check",
-    "lint:fix": "yarn prettier ./test/*.ts --write",
-    "clean": "rimraf ./build/",
-    "precompile": "yarn clean",
-    "compile": "waffle .waffle.json",
-    "pretest": "yarn compile",
-    "test": "mocha",
-    "prepublishOnly": "yarn test",
-    "truffle-migrate": "./node_modules/.bin/truffle migrate --reset;",
-    "truffle-migrate-ropsten": "./node_modules/.bin/truffle migrate --reset --network ropsten"
-  },
-  "license": "GPL-3.0-or-later",
-  "dependencies": {
-    "truffle": "^5.1.42"
   }
 }
