@@ -98,5 +98,5 @@ jobs:
         env:
           INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }}
           MNEMONIC: ${{ secrets.MNEMONIC }}
-      - run: yarn install-all
+      - run: yarn
       - run: yarn truffle-migrate-ropsten
