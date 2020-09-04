@@ -19,7 +19,6 @@ jobs:
           node-version: ${{ matrix.node }}
 
       - run: npm install -g yarn
-      - run: yarn lint
       - id: yarn-cache
         run: echo "::set-output name=dir::$(yarn cache dir)"
       - uses: actions/cache@v1
