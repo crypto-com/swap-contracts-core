@@ -23,7 +23,9 @@
   },
   "license": "GPL-3.0-or-later",
   "scripts": {
-    "lint": "yarn prettier ./test/*.ts --check",
+    "lint": "yarn lint:js && yarn lint:sol",
+    "lint:js": "yarn prettier ./test/*.ts --check",
+    "lint:sol": "./node_modules/.bin/solhint 'contracts/**/*.sol'",
     "lint:fix": "yarn prettier ./test/*.ts --write",
     "clean": "rimraf ./build/",
     "precompile": "yarn clean",
@@ -50,6 +52,8 @@
     "prettier": "1.19.1",
     "rimraf": "3.0.0",
     "solc": "0.5.16",
+    "solhint": "3.2.0",
+    "solidity-coverage": "0.7.10",
     "ts-node": "8.5.4",
     "typescript": "3.7.3"
   }
