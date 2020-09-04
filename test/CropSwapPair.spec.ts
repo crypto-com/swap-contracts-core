@@ -98,23 +98,17 @@ describe('CropSwapPair', () => {
 
   swapTestCases.forEach((swapTestCase, i) => {
     it(`getInputPrice:${i}: should revert when constant product formula condition is not met`, async () => {
-      const [
-        swapAmountOfToken0,
-        token0LiquidityAmount,
-        token1LiquidityAmount,
-        expectedOutputAmountOfToken1
-      ] = swapTestCase
+      const [swapAmountOfToken0, token0LiquidityAmount, token1LiquidityAmount, swapAmountOfToken1] = swapTestCase
       await addLiquidity(token0LiquidityAmount, token1LiquidityAmount, defaultLiquidityProviderWallet.address)
-      // need to transfer to defaultLiquidityTakerWallet first, because defaultLiquidityProviderWallet hoarded all the tokens
-      await token0.transfer(defaultLiquidityTakerWallet.address, swapAmountOfToken0)
       await token0.transfer(pair.address, swapAmountOfToken0)
       await expect(
-        pair.swap(0, expectedOutputAmountOfToken1.add(1), defaultLiquidityTakerWallet.address, '0x', overrides)
+        pair.swap(0, swapAmountOfToken1.add(1), defaultLiquidityTakerWallet.address, '0x', overrides)
       ).to.be.revertedWith('CropSwap: Constant product formula condition not met!')
-      await pair.swap(0, expectedOutputAmountOfToken1, defaultLiquidityTakerWallet.address, '0x', overrides)
+      await pair.swap(0, swapAmountOfToken1, defaultLiquidityTakerWallet.address, '0x', overrides)
     })
   })
 
+  // TODO this test is bound to change when fee ratio is configurable
   const optimisticTestCases: BigNumber[][] = [
     ['997000000000000000', 5, 10, 1], // given amountIn, amountOut = floor(amountIn * .997)
     ['997000000000000000', 10, 5, 1],
@@ -123,14 +117,14 @@ describe('CropSwapPair', () => {
   ].map(a => a.map(n => (typeof n === 'string' ? bigNumberify(n) : expandTo18Decimals(n))))
 
   optimisticTestCases.forEach((optimisticTestCase, i) => {
-    it(`optimistic:${i}`, async () => {
-      const [outputAmount, token0Amount, token1Amount, inputAmount] = optimisticTestCase
-      await addLiquidity(token0Amount, token1Amount, defaultLiquidityProviderWallet.address)
+    it(`optimistic:${i}: should revert when constant product formula condition is not met`, async () => {
+      const [swapAmountOfToken0, token0LiquidityAmount, token1LiquidityAmount, inputAmount] = optimisticTestCase
+      await addLiquidity(token0LiquidityAmount, token1LiquidityAmount, defaultLiquidityProviderWallet.address)
       await token0.transfer(pair.address, inputAmount)
       await expect(
-        pair.swap(outputAmount.add(1), 0, defaultLiquidityProviderWallet.address, '0x', overrides)
+        pair.swap(swapAmountOfToken0.add(1), 0, defaultLiquidityTakerWallet.address, '0x', overrides)
       ).to.be.revertedWith('CropSwap: Constant product formula condition not met!')
-      await pair.swap(outputAmount, 0, defaultLiquidityProviderWallet.address, '0x', overrides)
+      await pair.swap(swapAmountOfToken0, 0, defaultLiquidityTakerWallet.address, '0x', overrides)
     })
   })
 
