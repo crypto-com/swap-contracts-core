@@ -7334,7 +7334,7 @@ trim-right@^1.0.1:
   resolved "https://registry.yarnpkg.com/trim-right/-/trim-right-1.0.1.tgz#cb2e1203067e0c8de1f614094b9fe45704ea6003"
   integrity sha1-yy4SAwZ+DI3h9hQJS5/kVwTqYAM=
 
-truffle@^5.1.42:
+truffle@5.1.42:
   version "5.1.42"
   resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.1.42.tgz#ef8a73807121c3cd11039315b29609ea34e76b64"
   integrity sha512-kGNGU9YNasCjumaC67HaqEzAHeMMjN+q4WpBI54s2zoEvgbkLm6yNyL9arp7iy3niAZhG0OJleTRq0PmuCOpNw==
