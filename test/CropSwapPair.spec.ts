@@ -21,7 +21,7 @@ describe('CropSwapPair', () => {
     mnemonic: 'horn horn horn horn horn horn horn horn horn horn horn horn',
     gasLimit: 9999999
   })
-  const [defaultLiquidityProviderWallet, secondProvidedWallet, thirdProvidedWallet] = provider.getWallets()
+  const [defaultLiquidityProviderWallet, secondProvidedWallet, defaultLiquidityTakerWallet] = provider.getWallets()
   const loadFixture = createFixtureLoader(provider, [defaultLiquidityProviderWallet])
 
   let factory: Contract
@@ -69,7 +69,7 @@ describe('CropSwapPair', () => {
     expect(reserves[0]).to.eq(token0Amount)
     expect(reserves[1]).to.eq(token1Amount)
 
-    // mint one more time
+    // provide liquidity one more time with the same amounts on each side of the pair
     await token0.transfer(pair.address, token0Amount)
     await token1.transfer(pair.address, token1Amount)
     await pair.mint(defaultLiquidityProviderWallet.address, overrides)
@@ -83,6 +83,7 @@ describe('CropSwapPair', () => {
     await token1.transfer(pair.address, token1Amount)
     await pair.mint(liquidityProviderAddress, overrides)
   }
+
   const swapTestCases: BigNumber[][] = [
     [1, 5, 10, '1662497915624478906'],
     [1, 10, 5, '453305446940074565'],
@@ -94,15 +95,23 @@ describe('CropSwapPair', () => {
     [1, 100, 100, '987158034397061298'],
     [1, 1000, 1000, '996006981039903216']
   ].map(a => a.map(n => (typeof n === 'string' ? bigNumberify(n) : expandTo18Decimals(n))))
+
   swapTestCases.forEach((swapTestCase, i) => {
-    it(`getInputPrice:${i}`, async () => {
-      const [swapAmount, token0Amount, token1Amount, expectedOutputAmount] = swapTestCase
-      await addLiquidity(token0Amount, token1Amount, defaultLiquidityProviderWallet.address)
-      await token0.transfer(pair.address, swapAmount)
+    it(`getInputPrice:${i}: should revert when constant product formula condition is not met`, async () => {
+      const [
+        swapAmountOfToken0,
+        token0LiquidityAmount,
+        token1LiquidityAmount,
+        expectedOutputAmountOfToken1
+      ] = swapTestCase
+      await addLiquidity(token0LiquidityAmount, token1LiquidityAmount, defaultLiquidityProviderWallet.address)
+      // need to transfer to defaultLiquidityTakerWallet first, because defaultLiquidityProviderWallet hoarded all the tokens
+      await token0.transfer(defaultLiquidityTakerWallet.address, swapAmountOfToken0)
+      await token0.transfer(pair.address, swapAmountOfToken0)
       await expect(
-        pair.swap(0, expectedOutputAmount.add(1), defaultLiquidityProviderWallet.address, '0x', overrides)
-      ).to.be.revertedWith('CropSwap: K')
-      await pair.swap(0, expectedOutputAmount, defaultLiquidityProviderWallet.address, '0x', overrides)
+        pair.swap(0, expectedOutputAmountOfToken1.add(1), defaultLiquidityTakerWallet.address, '0x', overrides)
+      ).to.be.revertedWith('CropSwap: Constant product formula condition not met!')
+      await pair.swap(0, expectedOutputAmountOfToken1, defaultLiquidityTakerWallet.address, '0x', overrides)
     })
   })
 
@@ -112,6 +121,7 @@ describe('CropSwapPair', () => {
     ['997000000000000000', 5, 5, 1],
     [1, 5, 5, '1003009027081243732'] // given amountOut, amountIn = ceiling(amountOut / .997)
   ].map(a => a.map(n => (typeof n === 'string' ? bigNumberify(n) : expandTo18Decimals(n))))
+
   optimisticTestCases.forEach((optimisticTestCase, i) => {
     it(`optimistic:${i}`, async () => {
       const [outputAmount, token0Amount, token1Amount, inputAmount] = optimisticTestCase
@@ -119,7 +129,7 @@ describe('CropSwapPair', () => {
       await token0.transfer(pair.address, inputAmount)
       await expect(
         pair.swap(outputAmount.add(1), 0, defaultLiquidityProviderWallet.address, '0x', overrides)
-      ).to.be.revertedWith('CropSwap: K')
+      ).to.be.revertedWith('CropSwap: Constant product formula condition not met!')
       await pair.swap(outputAmount, 0, defaultLiquidityProviderWallet.address, '0x', overrides)
     })
   })
