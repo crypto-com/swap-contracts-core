@@ -128,41 +128,72 @@ describe('CropSwapPair', () => {
     })
   })
 
-  it('swap:token0', async () => {
-    const token0Amount = expandTo18Decimals(5)
-    const token1Amount = expandTo18Decimals(10)
-    await addLiquidity(token0Amount, token1Amount, defaultLiquidityProviderWallet.address)
+  it('swap:token0 into pool, token1 out of pool to liquidity taker', async () => {
+    const token0AdditionalLiquidityAmount = expandTo18Decimals(5)
+    const token1AdditionalLiquidityAmount = expandTo18Decimals(10)
+    await addLiquidity(
+      token0AdditionalLiquidityAmount,
+      token1AdditionalLiquidityAmount,
+      defaultLiquidityProviderWallet.address
+    )
 
-    const swapAmount = expandTo18Decimals(1)
-    const expectedOutputAmount = bigNumberify('1662497915624478906')
-    await token0.transfer(pair.address, swapAmount)
-    await expect(pair.swap(0, expectedOutputAmount, defaultLiquidityProviderWallet.address, '0x', overrides))
+    const swapInAmountOfToken0 = expandTo18Decimals(1)
+    const expectedSwapOutAmountOfToken1 = bigNumberify('1662497915624478906')
+    await token0.transfer(pair.address, swapInAmountOfToken0)
+
+    await expect(pair.swap(0, expectedSwapOutAmountOfToken1, defaultLiquidityTakerWallet.address, '0x', overrides))
       .to.emit(token1, 'Transfer')
-      .withArgs(pair.address, defaultLiquidityProviderWallet.address, expectedOutputAmount)
+      .withArgs(pair.address, defaultLiquidityTakerWallet.address, expectedSwapOutAmountOfToken1)
       .to.emit(pair, 'Sync')
-      .withArgs(token0Amount.add(swapAmount), token1Amount.sub(expectedOutputAmount))
+      .withArgs(
+        token0AdditionalLiquidityAmount.add(swapInAmountOfToken0),
+        token1AdditionalLiquidityAmount.sub(expectedSwapOutAmountOfToken1)
+      )
       .to.emit(pair, 'Swap')
       .withArgs(
         defaultLiquidityProviderWallet.address,
-        swapAmount,
+        swapInAmountOfToken0,
         0,
         0,
-        expectedOutputAmount,
-        defaultLiquidityProviderWallet.address
+        expectedSwapOutAmountOfToken1,
+        defaultLiquidityTakerWallet.address
       )
 
     const reserves = await pair.getReserves()
-    expect(reserves[0]).to.eq(token0Amount.add(swapAmount))
-    expect(reserves[1]).to.eq(token1Amount.sub(expectedOutputAmount))
-    expect(await token0.balanceOf(pair.address)).to.eq(token0Amount.add(swapAmount))
-    expect(await token1.balanceOf(pair.address)).to.eq(token1Amount.sub(expectedOutputAmount))
+    expect(reserves[0]).to.eq(
+      token0AdditionalLiquidityAmount.add(swapInAmountOfToken0),
+      'token 0 liquidity reserve should increase'
+    )
+    expect(reserves[1]).to.eq(
+      token1AdditionalLiquidityAmount.sub(expectedSwapOutAmountOfToken1),
+      'token 1 liquidity reserve should decrease'
+    )
+
     const totalSupplyToken0 = await token0.totalSupply()
     const totalSupplyToken1 = await token1.totalSupply()
-    expect(await token0.balanceOf(defaultLiquidityProviderWallet.address)).to.eq(
-      totalSupplyToken0.sub(token0Amount).sub(swapAmount)
+
+    expect(await token0.balanceOf(pair.address)).to.eq(
+      token0AdditionalLiquidityAmount.add(swapInAmountOfToken0),
+      'token 0 balance of this pair contract should increase after this specific swap'
     )
+    expect(await token0.balanceOf(defaultLiquidityProviderWallet.address)).to.eq(
+      totalSupplyToken0.sub(token0AdditionalLiquidityAmount).sub(swapInAmountOfToken0),
+      "liquidity provider's token 0 balance should decrease after this specific swap"
+    )
+    // FIXME why liquidity taker's token 0 balance is not affected? :( , why token 0 is not coming from liquidity taker???
+
+    expect(await token1.balanceOf(pair.address)).to.eq(
+      token1AdditionalLiquidityAmount.sub(expectedSwapOutAmountOfToken1),
+      'token 1 balance of this pair contract should decrease after this specific swap'
+    )
+    expect(await token1.balanceOf(defaultLiquidityTakerWallet.address)).to.eq(
+      expectedSwapOutAmountOfToken1,
+      `'liquidity taker\'s token 1 balance should increase from 0 to expectedSwapOutAmountOfToken1 (${expectedSwapOutAmountOfToken1}) after this specific swap'`
+    )
+
     expect(await token1.balanceOf(defaultLiquidityProviderWallet.address)).to.eq(
-      totalSupplyToken1.sub(token1Amount).add(expectedOutputAmount)
+      totalSupplyToken1.sub(token1AdditionalLiquidityAmount),
+      "liquidity provider's token 1 balance should not change before or after swap event initiated by another liquidity taker"
     )
   })
 
