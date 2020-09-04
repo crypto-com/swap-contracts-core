@@ -21,8 +21,8 @@ describe('CropSwapPair', () => {
     mnemonic: 'horn horn horn horn horn horn horn horn horn horn horn horn',
     gasLimit: 9999999
   })
-  const [wallet, other] = provider.getWallets()
-  const loadFixture = createFixtureLoader(provider, [wallet])
+  const [defaultLiquidityProviderWallet, secondProvidedWallet, thirdProvidedWallet] = provider.getWallets()
+  const loadFixture = createFixtureLoader(provider, [defaultLiquidityProviderWallet])
 
   let factory: Contract
   let token0: Contract
@@ -39,33 +39,49 @@ describe('CropSwapPair', () => {
   it('mint', async () => {
     const token0Amount = expandTo18Decimals(1)
     const token1Amount = expandTo18Decimals(4)
+    // always transfer from defaultLiquidityProviderWallet because of `createFixtureLoader` overrideWallets setting
     await token0.transfer(pair.address, token0Amount)
     await token1.transfer(pair.address, token1Amount)
 
-    const expectedLiquidity = expandTo18Decimals(2)
-    await expect(pair.mint(wallet.address, overrides))
+    const expectedLiquidityTokenAmount = expandTo18Decimals(2)
+    await expect(pair.mint(defaultLiquidityProviderWallet.address, overrides))
       .to.emit(pair, 'Transfer')
       .withArgs(AddressZero, AddressZero, MINIMUM_LIQUIDITY)
       .to.emit(pair, 'Transfer')
-      .withArgs(AddressZero, wallet.address, expectedLiquidity.sub(MINIMUM_LIQUIDITY))
+      .withArgs(
+        AddressZero,
+        defaultLiquidityProviderWallet.address,
+        expectedLiquidityTokenAmount.sub(MINIMUM_LIQUIDITY)
+      )
       .to.emit(pair, 'Sync')
       .withArgs(token0Amount, token1Amount)
       .to.emit(pair, 'Mint')
-      .withArgs(wallet.address, token0Amount, token1Amount)
+      .withArgs(defaultLiquidityProviderWallet.address, token0Amount, token1Amount)
 
-    expect(await pair.totalSupply()).to.eq(expectedLiquidity)
-    expect(await pair.balanceOf(wallet.address)).to.eq(expectedLiquidity.sub(MINIMUM_LIQUIDITY))
+    expect(await pair.totalSupply()).to.eq(expectedLiquidityTokenAmount)
+    expect(await pair.balanceOf(defaultLiquidityProviderWallet.address)).to.eq(
+      expectedLiquidityTokenAmount.sub(MINIMUM_LIQUIDITY)
+    )
     expect(await token0.balanceOf(pair.address)).to.eq(token0Amount)
     expect(await token1.balanceOf(pair.address)).to.eq(token1Amount)
+    // reserve amount equals this round supplied liquidity amount because only supplied liquidity once
     const reserves = await pair.getReserves()
     expect(reserves[0]).to.eq(token0Amount)
     expect(reserves[1]).to.eq(token1Amount)
-  })
 
-  async function addLiquidity(token0Amount: BigNumber, token1Amount: BigNumber) {
+    // mint one more time
     await token0.transfer(pair.address, token0Amount)
     await token1.transfer(pair.address, token1Amount)
-    await pair.mint(wallet.address, overrides)
+    await pair.mint(defaultLiquidityProviderWallet.address, overrides)
+    const reservesAfterProvidingLiquidityTwice = await pair.getReserves()
+    expect(reservesAfterProvidingLiquidityTwice[0]).to.eq(token0Amount.add(token0Amount))
+    expect(reservesAfterProvidingLiquidityTwice[1]).to.eq(token1Amount.add(token1Amount))
+  })
+
+  async function addLiquidity(token0Amount: BigNumber, token1Amount: BigNumber, liquidityProviderAddress: string) {
+    await token0.transfer(pair.address, token0Amount)
+    await token1.transfer(pair.address, token1Amount)
+    await pair.mint(liquidityProviderAddress, overrides)
   }
   const swapTestCases: BigNumber[][] = [
     [1, 5, 10, '1662497915624478906'],
@@ -81,12 +97,12 @@ describe('CropSwapPair', () => {
   swapTestCases.forEach((swapTestCase, i) => {
     it(`getInputPrice:${i}`, async () => {
       const [swapAmount, token0Amount, token1Amount, expectedOutputAmount] = swapTestCase
-      await addLiquidity(token0Amount, token1Amount)
+      await addLiquidity(token0Amount, token1Amount, defaultLiquidityProviderWallet.address)
       await token0.transfer(pair.address, swapAmount)
-      await expect(pair.swap(0, expectedOutputAmount.add(1), wallet.address, '0x', overrides)).to.be.revertedWith(
-        'CropSwap: K'
-      )
-      await pair.swap(0, expectedOutputAmount, wallet.address, '0x', overrides)
+      await expect(
+        pair.swap(0, expectedOutputAmount.add(1), defaultLiquidityProviderWallet.address, '0x', overrides)
+      ).to.be.revertedWith('CropSwap: K')
+      await pair.swap(0, expectedOutputAmount, defaultLiquidityProviderWallet.address, '0x', overrides)
     })
   })
 
@@ -99,28 +115,37 @@ describe('CropSwapPair', () => {
   optimisticTestCases.forEach((optimisticTestCase, i) => {
     it(`optimistic:${i}`, async () => {
       const [outputAmount, token0Amount, token1Amount, inputAmount] = optimisticTestCase
-      await addLiquidity(token0Amount, token1Amount)
+      await addLiquidity(token0Amount, token1Amount, defaultLiquidityProviderWallet.address)
       await token0.transfer(pair.address, inputAmount)
-      await expect(pair.swap(outputAmount.add(1), 0, wallet.address, '0x', overrides)).to.be.revertedWith('CropSwap: K')
-      await pair.swap(outputAmount, 0, wallet.address, '0x', overrides)
+      await expect(
+        pair.swap(outputAmount.add(1), 0, defaultLiquidityProviderWallet.address, '0x', overrides)
+      ).to.be.revertedWith('CropSwap: K')
+      await pair.swap(outputAmount, 0, defaultLiquidityProviderWallet.address, '0x', overrides)
     })
   })
 
   it('swap:token0', async () => {
     const token0Amount = expandTo18Decimals(5)
     const token1Amount = expandTo18Decimals(10)
-    await addLiquidity(token0Amount, token1Amount)
+    await addLiquidity(token0Amount, token1Amount, defaultLiquidityProviderWallet.address)
 
     const swapAmount = expandTo18Decimals(1)
     const expectedOutputAmount = bigNumberify('1662497915624478906')
     await token0.transfer(pair.address, swapAmount)
-    await expect(pair.swap(0, expectedOutputAmount, wallet.address, '0x', overrides))
+    await expect(pair.swap(0, expectedOutputAmount, defaultLiquidityProviderWallet.address, '0x', overrides))
       .to.emit(token1, 'Transfer')
-      .withArgs(pair.address, wallet.address, expectedOutputAmount)
+      .withArgs(pair.address, defaultLiquidityProviderWallet.address, expectedOutputAmount)
       .to.emit(pair, 'Sync')
       .withArgs(token0Amount.add(swapAmount), token1Amount.sub(expectedOutputAmount))
       .to.emit(pair, 'Swap')
-      .withArgs(wallet.address, swapAmount, 0, 0, expectedOutputAmount, wallet.address)
+      .withArgs(
+        defaultLiquidityProviderWallet.address,
+        swapAmount,
+        0,
+        0,
+        expectedOutputAmount,
+        defaultLiquidityProviderWallet.address
+      )
 
     const reserves = await pair.getReserves()
     expect(reserves[0]).to.eq(token0Amount.add(swapAmount))
@@ -129,25 +154,36 @@ describe('CropSwapPair', () => {
     expect(await token1.balanceOf(pair.address)).to.eq(token1Amount.sub(expectedOutputAmount))
     const totalSupplyToken0 = await token0.totalSupply()
     const totalSupplyToken1 = await token1.totalSupply()
-    expect(await token0.balanceOf(wallet.address)).to.eq(totalSupplyToken0.sub(token0Amount).sub(swapAmount))
-    expect(await token1.balanceOf(wallet.address)).to.eq(totalSupplyToken1.sub(token1Amount).add(expectedOutputAmount))
+    expect(await token0.balanceOf(defaultLiquidityProviderWallet.address)).to.eq(
+      totalSupplyToken0.sub(token0Amount).sub(swapAmount)
+    )
+    expect(await token1.balanceOf(defaultLiquidityProviderWallet.address)).to.eq(
+      totalSupplyToken1.sub(token1Amount).add(expectedOutputAmount)
+    )
   })
 
   it('swap:token1', async () => {
     const token0Amount = expandTo18Decimals(5)
     const token1Amount = expandTo18Decimals(10)
-    await addLiquidity(token0Amount, token1Amount)
+    await addLiquidity(token0Amount, token1Amount, defaultLiquidityProviderWallet.address)
 
     const swapAmount = expandTo18Decimals(1)
     const expectedOutputAmount = bigNumberify('453305446940074565')
     await token1.transfer(pair.address, swapAmount)
-    await expect(pair.swap(expectedOutputAmount, 0, wallet.address, '0x', overrides))
+    await expect(pair.swap(expectedOutputAmount, 0, defaultLiquidityProviderWallet.address, '0x', overrides))
       .to.emit(token0, 'Transfer')
-      .withArgs(pair.address, wallet.address, expectedOutputAmount)
+      .withArgs(pair.address, defaultLiquidityProviderWallet.address, expectedOutputAmount)
       .to.emit(pair, 'Sync')
       .withArgs(token0Amount.sub(expectedOutputAmount), token1Amount.add(swapAmount))
       .to.emit(pair, 'Swap')
-      .withArgs(wallet.address, 0, swapAmount, expectedOutputAmount, 0, wallet.address)
+      .withArgs(
+        defaultLiquidityProviderWallet.address,
+        0,
+        swapAmount,
+        expectedOutputAmount,
+        0,
+        defaultLiquidityProviderWallet.address
+      )
 
     const reserves = await pair.getReserves()
     expect(reserves[0]).to.eq(token0Amount.sub(expectedOutputAmount))
@@ -156,14 +192,18 @@ describe('CropSwapPair', () => {
     expect(await token1.balanceOf(pair.address)).to.eq(token1Amount.add(swapAmount))
     const totalSupplyToken0 = await token0.totalSupply()
     const totalSupplyToken1 = await token1.totalSupply()
-    expect(await token0.balanceOf(wallet.address)).to.eq(totalSupplyToken0.sub(token0Amount).add(expectedOutputAmount))
-    expect(await token1.balanceOf(wallet.address)).to.eq(totalSupplyToken1.sub(token1Amount).sub(swapAmount))
+    expect(await token0.balanceOf(defaultLiquidityProviderWallet.address)).to.eq(
+      totalSupplyToken0.sub(token0Amount).add(expectedOutputAmount)
+    )
+    expect(await token1.balanceOf(defaultLiquidityProviderWallet.address)).to.eq(
+      totalSupplyToken1.sub(token1Amount).sub(swapAmount)
+    )
   })
 
   it('swap:gas', async () => {
     const token0Amount = expandTo18Decimals(5)
     const token1Amount = expandTo18Decimals(10)
-    await addLiquidity(token0Amount, token1Amount)
+    await addLiquidity(token0Amount, token1Amount, defaultLiquidityProviderWallet.address)
 
     // ensure that setting price{0,1}CumulativeLast for the first time doesn't affect our gas math
     await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
@@ -173,7 +213,7 @@ describe('CropSwapPair', () => {
     const expectedOutputAmount = bigNumberify('453305446940074565')
     await token1.transfer(pair.address, swapAmount)
     await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-    const tx = await pair.swap(expectedOutputAmount, 0, wallet.address, '0x', overrides)
+    const tx = await pair.swap(expectedOutputAmount, 0, defaultLiquidityProviderWallet.address, '0x', overrides)
     const receipt = await tx.wait()
     expect(receipt.gasUsed).to.eq(73462)
   })
@@ -181,36 +221,43 @@ describe('CropSwapPair', () => {
   it('burn', async () => {
     const token0Amount = expandTo18Decimals(3)
     const token1Amount = expandTo18Decimals(3)
-    await addLiquidity(token0Amount, token1Amount)
+    await addLiquidity(token0Amount, token1Amount, defaultLiquidityProviderWallet.address)
 
     const expectedLiquidity = expandTo18Decimals(3)
     await pair.transfer(pair.address, expectedLiquidity.sub(MINIMUM_LIQUIDITY))
-    await expect(pair.burn(wallet.address, overrides))
+    await expect(pair.burn(defaultLiquidityProviderWallet.address, overrides))
       .to.emit(pair, 'Transfer')
       .withArgs(pair.address, AddressZero, expectedLiquidity.sub(MINIMUM_LIQUIDITY))
       .to.emit(token0, 'Transfer')
-      .withArgs(pair.address, wallet.address, token0Amount.sub(1000))
+      .withArgs(pair.address, defaultLiquidityProviderWallet.address, token0Amount.sub(1000))
       .to.emit(token1, 'Transfer')
-      .withArgs(pair.address, wallet.address, token1Amount.sub(1000))
+      .withArgs(pair.address, defaultLiquidityProviderWallet.address, token1Amount.sub(1000))
       .to.emit(pair, 'Sync')
       .withArgs(1000, 1000)
       .to.emit(pair, 'Burn')
-      .withArgs(wallet.address, token0Amount.sub(1000), token1Amount.sub(1000), wallet.address)
+      .withArgs(
+        defaultLiquidityProviderWallet.address,
+        token0Amount.sub(1000),
+        token1Amount.sub(1000),
+        defaultLiquidityProviderWallet.address
+      )
 
-    expect(await pair.balanceOf(wallet.address)).to.eq(0)
+    expect(await pair.balanceOf(defaultLiquidityProviderWallet.address)).to.eq(0)
     expect(await pair.totalSupply()).to.eq(MINIMUM_LIQUIDITY)
     expect(await token0.balanceOf(pair.address)).to.eq(1000)
     expect(await token1.balanceOf(pair.address)).to.eq(1000)
     const totalSupplyToken0 = await token0.totalSupply()
     const totalSupplyToken1 = await token1.totalSupply()
-    expect(await token0.balanceOf(wallet.address)).to.eq(totalSupplyToken0.sub(1000))
-    expect(await token1.balanceOf(wallet.address)).to.eq(totalSupplyToken1.sub(1000))
+    expect(await token0.balanceOf(defaultLiquidityProviderWallet.address)).to.eq(totalSupplyToken0.sub(1000))
+    expect(await token1.balanceOf(defaultLiquidityProviderWallet.address)).to.eq(totalSupplyToken1.sub(1000))
   })
 
   it('price{0,1}CumulativeLast', async () => {
+    const liquidityProviderAddress = defaultLiquidityProviderWallet.address
+
     const token0Amount = expandTo18Decimals(3)
     const token1Amount = expandTo18Decimals(3)
-    await addLiquidity(token0Amount, token1Amount)
+    await addLiquidity(token0Amount, token1Amount, liquidityProviderAddress)
 
     const blockTimestamp = (await pair.getReserves())[2]
     await mineBlock(provider, blockTimestamp + 1)
@@ -225,7 +272,7 @@ describe('CropSwapPair', () => {
     await token0.transfer(pair.address, swapAmount)
     await mineBlock(provider, blockTimestamp + 10)
     // swap to a new price eagerly instead of syncing
-    await pair.swap(0, expandTo18Decimals(1), wallet.address, '0x', overrides) // make the price nice
+    await pair.swap(0, expandTo18Decimals(1), liquidityProviderAddress, '0x', overrides) // make the price nice
 
     expect(await pair.price0CumulativeLast()).to.eq(initialPrice[0].mul(10))
     expect(await pair.price1CumulativeLast()).to.eq(initialPrice[1].mul(10))
@@ -240,39 +287,44 @@ describe('CropSwapPair', () => {
     expect((await pair.getReserves())[2]).to.eq(blockTimestamp + 20)
   })
 
-  it('feeTo:off', async () => {
+  it('When feeTo:off, all fee should go to liquidity providers.', async () => {
+    const liquidityProviderAddress = defaultLiquidityProviderWallet.address
+
     const token0Amount = expandTo18Decimals(1000)
     const token1Amount = expandTo18Decimals(1000)
-    await addLiquidity(token0Amount, token1Amount)
+    await addLiquidity(token0Amount, token1Amount, liquidityProviderAddress)
 
     const swapAmount = expandTo18Decimals(1)
     const expectedOutputAmount = bigNumberify('996006981039903216')
     await token1.transfer(pair.address, swapAmount)
-    await pair.swap(expectedOutputAmount, 0, wallet.address, '0x', overrides)
+    await pair.swap(expectedOutputAmount, 0, liquidityProviderAddress, '0x', overrides)
 
     const expectedLiquidity = expandTo18Decimals(1000)
     await pair.transfer(pair.address, expectedLiquidity.sub(MINIMUM_LIQUIDITY))
-    await pair.burn(wallet.address, overrides)
+    await pair.burn(liquidityProviderAddress, overrides)
     expect(await pair.totalSupply()).to.eq(MINIMUM_LIQUIDITY)
   })
 
-  it('feeTo:on', async () => {
-    await factory.setFeeTo(other.address)
+  it('When feeTo:on, 2.5 basis points of fees should go to feeToAddress, the rest still go to liquidity providers', async () => {
+    const feeToAddress = secondProvidedWallet.address
+    const liquidityProviderAddress = defaultLiquidityProviderWallet.address
+    await factory.setFeeTo(feeToAddress)
 
     const token0Amount = expandTo18Decimals(1000)
     const token1Amount = expandTo18Decimals(1000)
-    await addLiquidity(token0Amount, token1Amount)
+    await addLiquidity(token0Amount, token1Amount, liquidityProviderAddress)
 
     const swapAmount = expandTo18Decimals(1)
     const expectedOutputAmount = bigNumberify('996006981039903216')
     await token1.transfer(pair.address, swapAmount)
-    await pair.swap(expectedOutputAmount, 0, wallet.address, '0x', overrides)
+    await pair.swap(expectedOutputAmount, 0, liquidityProviderAddress, '0x', overrides)
 
     const expectedLiquidity = expandTo18Decimals(1000)
     await pair.transfer(pair.address, expectedLiquidity.sub(MINIMUM_LIQUIDITY))
-    await pair.burn(wallet.address, overrides)
-    expect(await pair.totalSupply()).to.eq(MINIMUM_LIQUIDITY.add('249750499251388'))
-    expect(await pair.balanceOf(other.address)).to.eq('249750499251388')
+    await pair.burn(liquidityProviderAddress, overrides)
+    const expectedFeeToAmount = '249750499251388' // roughly 2.5 bps of the expectedOutputAmount
+    expect(await pair.totalSupply()).to.eq(MINIMUM_LIQUIDITY.add(expectedFeeToAmount))
+    expect(await pair.balanceOf(feeToAddress)).to.eq(expectedFeeToAmount)
 
     // using 1000 here instead of the symbolic MINIMUM_LIQUIDITY because the amounts only happen to be equal...
     // ...because the initial liquidity amounts were equal
