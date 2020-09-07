@@ -62,6 +62,9 @@ jobs:
           INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }}
           MNEMONIC: ${{ secrets.MNEMONIC }}
       - run: yarn
+      - run: yarn compile
+      - run: yarn truffle-compile
+      - run: yarn replace-factory
       - run: yarn truffle-migrate
   deploy-ropsten:
     runs-on: ubuntu-latest
@@ -98,4 +101,7 @@ jobs:
           INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }}
           MNEMONIC: ${{ secrets.MNEMONIC }}
       - run: yarn
+      - run: yarn compile
+      - run: yarn truffle-compile
+      - run: yarn replace-factory
       - run: yarn truffle-migrate-ropsten

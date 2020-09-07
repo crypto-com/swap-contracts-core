@@ -29,8 +29,8 @@ describe('CropSwapERC20', () => {
 
   it('name, symbol, decimals, totalSupply, balanceOf, DOMAIN_SEPARATOR, PERMIT_TYPEHASH', async () => {
     const name = await token.name()
-    expect(name).to.eq('Crop Swap')
-    expect(await token.symbol()).to.eq('CROP-SWAP')
+    expect(name).to.eq('CRO Defi Swap')
+    expect(await token.symbol()).to.eq('CRO-SWAP')
     expect(await token.decimals()).to.eq(18)
     expect(await token.totalSupply()).to.eq(TOTAL_SUPPLY)
     expect(await token.balanceOf(wallet.address)).to.eq(TOTAL_SUPPLY)

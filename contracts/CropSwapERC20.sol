@@ -6,8 +6,8 @@ import './libraries/SafeMath.sol';
 contract CropSwapERC20 is ICropSwapERC20 {
     using SafeMath for uint;
 
-    string public constant name = 'Crop Swap';
-    string public constant symbol = 'CROP-SWAP';
+    string public constant name = 'CRO Defi Swap';
+    string public constant symbol = 'CRO-SWAP';
     uint8 public constant decimals = 18;
     uint  public totalSupply;
     mapping(address => uint) public balanceOf;
