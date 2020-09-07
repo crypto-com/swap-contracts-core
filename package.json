@@ -1,18 +1,24 @@
 {
-  "name": "@uniswap/v2-core",
-  "description": "🎛 Core contracts for the UniswapV2 protocol",
-  "version": "1.0.1",
-  "homepage": "https://uniswap.org",
+  "name": "@crypto-com/swap-contracts-core",
+  "description": "🎛 Core contracts for the CropSwap protocol",
+  "version": "0.0.1",
+  "homepage": "https://cropswap.crypto.com",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Uniswap/uniswap-v2-core"
+    "url": "https://github.com/crypto-com/swap-contracts-core"
   },
   "keywords": [
-    "uniswap",
+    "CropSwap",
     "ethereum",
-    "v2",
     "core",
-    "uniswap-v2"
+    "crypto.com",
+    "DEcentralised FInance",
+    "DEFI",
+    "Automated Market Making",
+    "AMM",
+    "DEcentralised eXchange",
+    "DEX",
+    "Liquity Mining"
   ],
   "files": [
     "contracts",
