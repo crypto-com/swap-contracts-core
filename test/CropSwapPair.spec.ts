@@ -22,7 +22,7 @@ describe('CropSwapPair', () => {
     gasLimit: 9999999
   })
   const [defaultLiquidityProviderWallet, secondProvidedWallet, defaultLiquidityTakerWallet] = provider.getWallets()
-  const loadFixture = createFixtureLoader(provider, [defaultLiquidityProviderWallet])
+  const loadFixture = createFixtureLoader(provider, [defaultLiquidityProviderWallet, defaultLiquidityTakerWallet])
 
   let factory: Contract
   let token0: Contract
@@ -324,12 +324,18 @@ describe('CropSwapPair', () => {
   })
 
   it.only('When feeTo:off, all fee should go to liquidity providers.', async () => {
+    const swapAmount = expandTo18Decimals(1)
+    await token1.transfer(defaultLiquidityTakerWallet.address, swapAmount.mul(2)); // add some buffer to avoid underflow
+
     console.log(`before providing liquidity: await token0.balanceOf(provider.address): ${await token0.balanceOf(defaultLiquidityProviderWallet.address)}`)
     console.log(`before providing liquidity: await token1.balanceOf(provider.address): ${await token1.balanceOf(defaultLiquidityProviderWallet.address)}`)
     console.log(`before providing liquidity: await token0.balanceOf(pair.address): ${await token0.balanceOf(pair.address)}`)
     console.log(`before providing liquidity: await token1.balanceOf(pair.address): ${await token1.balanceOf(pair.address)}`)
     console.log(`before providing liquidity: await token0.balanceOf(taker.address): ${await token0.balanceOf(defaultLiquidityTakerWallet.address)}`)
     console.log(`before providing liquidity: await token1.balanceOf(taker.address): ${await token1.balanceOf(defaultLiquidityTakerWallet.address)}`)
+
+    console.log(`LP: before providing liquidity: await pair.balanceOf(provider.address): ${await pair.balanceOf(defaultLiquidityProviderWallet.address)}`)
+    console.log(`LP: before providing liquidity: await pair.balanceOf(taker.address): ${await pair.balanceOf(defaultLiquidityTakerWallet.address)}`)
 
     const token0Amount = expandTo18Decimals(1000)
     const token1Amount = expandTo18Decimals(1000)
@@ -343,9 +349,14 @@ describe('CropSwapPair', () => {
     console.log(`after addLiquidity & before transfer swapAmount: await token0.balanceOf(taker.address): ${await token0.balanceOf(defaultLiquidityTakerWallet.address)}`)
     console.log(`after addLiquidity & before transfer swapAmount: await token1.balanceOf(taker.address): ${await token1.balanceOf(defaultLiquidityTakerWallet.address)}`)
 
+    console.log(`LP: after addLiquidity & before transfer swapAmount: await pair.balanceOf(provider.address): ${await pair.balanceOf(defaultLiquidityProviderWallet.address)}`)
+    console.log(`LP: after addLiquidity & before transfer swapAmount: await pair.balanceOf(taker.address): ${await pair.balanceOf(defaultLiquidityTakerWallet.address)}`)
 
-    const swapAmount = expandTo18Decimals(1)
-    await token1.transfer(pair.address, swapAmount)
+    await token1.connect(defaultLiquidityTakerWallet).approve(pair.address, swapAmount)
+    console.log(`await token1.allowance(provider.address, taker.address): ${await token1.allowance(defaultLiquidityProviderWallet.address, defaultLiquidityTakerWallet.address)}`)
+    console.log(`await token1.allowance(provider.address, pair.address): ${await token1.allowance(defaultLiquidityProviderWallet.address, pair.address)}`)
+    console.log(`await token1.allowance(taker.address, pair.address): ${await token1.allowance(defaultLiquidityTakerWallet.address, pair.address)}`)
+    await token1.connect(defaultLiquidityTakerWallet).transfer(pair.address, swapAmount)
 
     console.log(`after transfer swapAmount & before swap token0 out to taker: await token0.balanceOf(provider.address): ${await token0.balanceOf(defaultLiquidityProviderWallet.address)}`)
     console.log(`after transfer swapAmount & before swap token0 out to taker: await token1.balanceOf(provider.address): ${await token1.balanceOf(defaultLiquidityProviderWallet.address)}`)
@@ -353,6 +364,9 @@ describe('CropSwapPair', () => {
     console.log(`after transfer swapAmount & before swap token0 out to taker: await token1.balanceOf(pair.address): ${await token1.balanceOf(pair.address)}`)
     console.log(`after transfer swapAmount & before swap token0 out to taker: await token0.balanceOf(taker.address): ${await token0.balanceOf(defaultLiquidityTakerWallet.address)}`)
     console.log(`after transfer swapAmount & before swap token0 out to taker: await token1.balanceOf(taker.address): ${await token1.balanceOf(defaultLiquidityTakerWallet.address)}`)
+
+    console.log(`LP: after transfer swapAmount & before swap token0 out to taker: await pair.balanceOf(provider.address): ${await pair.balanceOf(defaultLiquidityProviderWallet.address)}`)
+    console.log(`LP: after transfer swapAmount & before swap token0 out to taker: await pair.balanceOf(taker.address): ${await pair.balanceOf(defaultLiquidityTakerWallet.address)}`)
 
     const expectedOutputAmountOfToken0 = bigNumberify('996006981039903216')
     const expectedOutputAmountOfToken1 = bigNumberify('0')
@@ -367,6 +381,9 @@ describe('CropSwapPair', () => {
     console.log(`after swap token0 out & before transfer min: await token0.balanceOf(taker.address): ${await token0.balanceOf(defaultLiquidityTakerWallet.address)}`)
     console.log(`after swap token0 out & before transfer min: await token1.balanceOf(taker.address): ${await token1.balanceOf(defaultLiquidityTakerWallet.address)}`)
 
+    console.log(`LP: after swap token0 out & before transfer min: await pair.balanceOf(provider.address): ${await pair.balanceOf(defaultLiquidityProviderWallet.address)}`)
+    console.log(`LP: after swap token0 out & before transfer min: await pair.balanceOf(taker.address): ${await pair.balanceOf(defaultLiquidityTakerWallet.address)}`)
+
     const expectedLiquidity = expandTo18Decimals(1000)
     await pair.transfer(pair.address, expectedLiquidity.sub(MINIMUM_LIQUIDITY))
 
@@ -377,6 +394,9 @@ describe('CropSwapPair', () => {
     console.log(`after transfer min liquidity & before burn: await token0.balanceOf(taker.address): ${await token0.balanceOf(defaultLiquidityTakerWallet.address)}`)
     console.log(`after transfer min liquidity & before burn: await token1.balanceOf(taker.address): ${await token1.balanceOf(defaultLiquidityTakerWallet.address)}`)
 
+    console.log(`LP: after transfer min liquidity & before burn: await pair.balanceOf(provider.address): ${await pair.balanceOf(defaultLiquidityProviderWallet.address)}`)
+    console.log(`LP: after transfer min liquidity & before burn: await pair.balanceOf(taker.address): ${await pair.balanceOf(defaultLiquidityTakerWallet.address)}`)
+
     await pair.burn(defaultLiquidityProviderWallet.address, overrides)
 
     console.log(`after swap & burn: await token0.balanceOf(provider.address): ${await token0.balanceOf(defaultLiquidityProviderWallet.address)}`)
@@ -385,6 +405,9 @@ describe('CropSwapPair', () => {
     console.log(`after swap & burn: await token1.balanceOf(pair.address): ${await token1.balanceOf(pair.address)}`)
     console.log(`after swap & burn: await token0.balanceOf(taker.address): ${await token0.balanceOf(defaultLiquidityTakerWallet.address)}`)
     console.log(`after swap & burn: await token1.balanceOf(taker.address): ${await token1.balanceOf(defaultLiquidityTakerWallet.address)}`)
+
+    console.log(`LP: after swap & burn: await pair.balanceOf(provider.address): ${await pair.balanceOf(defaultLiquidityProviderWallet.address)}`)
+    console.log(`LP: after swap & burn: await pair.balanceOf(taker.address): ${await pair.balanceOf(defaultLiquidityTakerWallet.address)}`)
 
     expect(await pair.totalSupply()).to.eq(MINIMUM_LIQUIDITY)
   })
