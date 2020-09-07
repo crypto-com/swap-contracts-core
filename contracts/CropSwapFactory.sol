@@ -5,15 +5,20 @@ import './CropSwapPair.sol';
 
 contract CropSwapFactory is ICropSwapFactory {
     address public feeTo;
-    address public feeToSetter;
+    address public feeSetter;
+    uint public feeToBasisPoint;
+    uint public totalFeeBasisPoint;
 
     mapping(address => mapping(address => address)) public getPair;
     address[] public allPairs;
 
     event PairCreated(address indexed token0, address indexed token1, address pair, uint);
 
-    constructor(address _feeToSetter) public {
-        feeToSetter = _feeToSetter;
+    constructor(address _feeSetter, uint _totalFeeBasisPoint, uint _feeToBasisPoint) public {
+        require(_totalFeeBasisPoint>=_feeToBasisPoint, '_totalFeeBasisPoint should be larger than or equal to _feeToBasisPoint');
+        feeSetter = _feeSetter;
+        totalFeeBasisPoint = _totalFeeBasisPoint;
+        feeToBasisPoint = _feeToBasisPoint;
     }
 
     function allPairsLength() external view returns (uint) {
@@ -38,12 +43,25 @@ contract CropSwapFactory is ICropSwapFactory {
     }
 
     function setFeeTo(address _feeTo) external {
-        require(msg.sender == feeToSetter, 'CropSwap: FORBIDDEN');
+        require(msg.sender == feeSetter, 'CropSwap: FORBIDDEN - only current feeSetter can update feeTo');
         feeTo = _feeTo;
     }
 
-    function setFeeToSetter(address _feeToSetter) external {
-        require(msg.sender == feeToSetter, 'CropSwap: FORBIDDEN');
-        feeToSetter = _feeToSetter;
+    function setFeeSetter(address _feeSetter) external {
+        require(msg.sender == feeSetter, 'CropSwap: FORBIDDEN - only current feeSetter can update next feeSetter');
+        feeSetter = _feeSetter;
+    }
+
+    function setFeeToBasisPoint(uint _feeToBasisPoint) external {
+        require(msg.sender == feeSetter, 'CropSwap: FORBIDDEN - only current feeSetter can update feeToBasisPoint');
+        require(_feeToBasisPoint >= 0, 'CropSwap: FORBIDDEN - _feeToBasisPoint need to be bigger than or equal to 0');
+        require(_feeToBasisPoint <= totalFeeBasisPoint, 'CropSwap: FORBIDDEN - _feeToBasisPoint need to be smaller than or equal to totalFeeBasisPoint');
+        feeToBasisPoint = _feeToBasisPoint;
+    }
+
+    function setTotalFeeBasisPoint(uint _totalFeeBasisPoint) external {
+        require(msg.sender == feeSetter, 'CropSwap: FORBIDDEN - only current feeSetter can update feeToBasisPoint');
+        require(_totalFeeBasisPoint >= feeToBasisPoint, 'CropSwap: FORBIDDEN - _totalFeeBasisPoint need to be bigger than or equal to feeToBasisPoint');
+        totalFeeBasisPoint = _totalFeeBasisPoint;
     }
 }
