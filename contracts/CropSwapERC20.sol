@@ -1,9 +1,9 @@
 pragma solidity =0.5.16;
 
-import './interfaces/ICropSwapERC20.sol';
+import './interfaces/ICroDefiSwapERC20.sol';
 import './libraries/SafeMath.sol';
 
-contract CropSwapERC20 is ICropSwapERC20 {
+contract CroDefiSwapERC20 is ICroDefiSwapERC20 {
     using SafeMath for uint;
 
     string public constant name = 'CRO Defi Swap';
@@ -79,7 +79,7 @@ contract CropSwapERC20 is ICropSwapERC20 {
     }
 
     function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external {
-        require(deadline >= block.timestamp, 'CropSwap: EXPIRED');
+        require(deadline >= block.timestamp, 'CroDefiSwap: EXPIRED');
         bytes32 digest = keccak256(
             abi.encodePacked(
                 '\x19\x01',
@@ -88,7 +88,7 @@ contract CropSwapERC20 is ICropSwapERC20 {
             )
         );
         address recoveredAddress = ecrecover(digest, v, r, s);
-        require(recoveredAddress != address(0) && recoveredAddress == owner, 'CropSwap: INVALID_SIGNATURE');
+        require(recoveredAddress != address(0) && recoveredAddress == owner, 'CroDefiSwap: INVALID_SIGNATURE');
         _approve(owner, spender, value);
     }
 }

@@ -7,7 +7,7 @@ import { solidity, MockProvider, createFixtureLoader } from 'ethereum-waffle'
 import { getCreate2Address } from './shared/utilities'
 import { factoryFixture } from './shared/fixtures'
 
-import CropSwapPair from '../build/CropSwapPair.json'
+import CroDefiSwapPair from '../build/CroDefiSwapPair.json'
 
 chai.use(solidity)
 
@@ -16,7 +16,7 @@ const TEST_ADDRESSES: [string, string] = [
   '0x2000000000000000000000000000000000000000'
 ]
 
-describe('CropSwapFactory', () => {
+describe('CroDefiSwapFactory', () => {
   const provider = new MockProvider({
     hardfork: 'istanbul',
     mnemonic: 'horn horn horn horn horn horn horn horn horn horn horn horn',
@@ -38,20 +38,20 @@ describe('CropSwapFactory', () => {
   })
 
   async function createPair(tokens: [string, string]) {
-    const bytecode = `0x${CropSwapPair.evm.bytecode.object}`
+    const bytecode = `0x${CroDefiSwapPair.evm.bytecode.object}`
     const create2Address = getCreate2Address(factory.address, tokens, bytecode)
     await expect(factory.createPair(...tokens))
       .to.emit(factory, 'PairCreated')
       .withArgs(TEST_ADDRESSES[0], TEST_ADDRESSES[1], create2Address, bigNumberify(1))
 
-    await expect(factory.createPair(...tokens)).to.be.reverted // CropSwap: PAIR_EXISTS
-    await expect(factory.createPair(...tokens.slice().reverse())).to.be.reverted // CropSwap: PAIR_EXISTS
+    await expect(factory.createPair(...tokens)).to.be.reverted // CroDefiSwap: PAIR_EXISTS
+    await expect(factory.createPair(...tokens.slice().reverse())).to.be.reverted // CroDefiSwap: PAIR_EXISTS
     expect(await factory.getPair(...tokens)).to.eq(create2Address)
     expect(await factory.getPair(...tokens.slice().reverse())).to.eq(create2Address)
     expect(await factory.allPairs(0)).to.eq(create2Address)
     expect(await factory.allPairsLength()).to.eq(1)
 
-    const pair = new Contract(create2Address, JSON.stringify(CropSwapPair.abi), provider)
+    const pair = new Contract(create2Address, JSON.stringify(CroDefiSwapPair.abi), provider)
     expect(await pair.factory()).to.eq(factory.address)
     expect(await pair.token0()).to.eq(TEST_ADDRESSES[0])
     expect(await pair.token1()).to.eq(TEST_ADDRESSES[1])
@@ -72,15 +72,15 @@ describe('CropSwapFactory', () => {
   })
 
   it('setFeeTo', async () => {
-    await expect(factory.connect(other).setFeeTo(other.address)).to.be.revertedWith('CropSwap: FORBIDDEN')
+    await expect(factory.connect(other).setFeeTo(other.address)).to.be.revertedWith('CroDefiSwap: FORBIDDEN')
     await factory.setFeeTo(wallet.address)
     expect(await factory.feeTo()).to.eq(wallet.address)
   })
 
   it('setFeeSetter', async () => {
-    await expect(factory.connect(other).setFeeSetter(other.address)).to.be.revertedWith('CropSwap: FORBIDDEN')
+    await expect(factory.connect(other).setFeeSetter(other.address)).to.be.revertedWith('CroDefiSwap: FORBIDDEN')
     await factory.setFeeSetter(other.address)
     expect(await factory.feeSetter()).to.eq(other.address)
-    await expect(factory.setFeeSetter(wallet.address)).to.be.revertedWith('CropSwap: FORBIDDEN')
+    await expect(factory.setFeeSetter(wallet.address)).to.be.revertedWith('CroDefiSwap: FORBIDDEN')
   })
 })

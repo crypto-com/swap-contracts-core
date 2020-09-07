@@ -1,9 +1,9 @@
 pragma solidity =0.5.16;
 
-import './interfaces/ICropSwapFactory.sol';
-import './CropSwapPair.sol';
+import './interfaces/ICroDefiSwapFactory.sol';
+import './CroDefiSwapPair.sol';
 
-contract CropSwapFactory is ICropSwapFactory {
+contract CroDefiSwapFactory is ICroDefiSwapFactory {
     address public feeTo;
     address public feeSetter;
     uint public feeToBasisPoint;
@@ -26,16 +26,16 @@ contract CropSwapFactory is ICropSwapFactory {
     }
 
     function createPair(address tokenA, address tokenB) external returns (address pair) {
-        require(tokenA != tokenB, 'CropSwap: IDENTICAL_ADDRESSES');
+        require(tokenA != tokenB, 'CroDefiSwap: IDENTICAL_ADDRESSES');
         (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
-        require(token0 != address(0), 'CropSwap: ZERO_ADDRESS');
-        require(getPair[token0][token1] == address(0), 'CropSwap: PAIR_EXISTS'); // single check is sufficient
-        bytes memory bytecode = type(CropSwapPair).creationCode;
+        require(token0 != address(0), 'CroDefiSwap: ZERO_ADDRESS');
+        require(getPair[token0][token1] == address(0), 'CroDefiSwap: PAIR_EXISTS'); // single check is sufficient
+        bytes memory bytecode = type(CroDefiSwapPair).creationCode;
         bytes32 salt = keccak256(abi.encodePacked(token0, token1));
         assembly {
             pair := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }
-        ICropSwapPair(pair).initialize(token0, token1);
+        ICroDefiSwapPair(pair).initialize(token0, token1);
         getPair[token0][token1] = pair;
         getPair[token1][token0] = pair; // populate mapping in the reverse direction
         allPairs.push(pair);
@@ -43,25 +43,25 @@ contract CropSwapFactory is ICropSwapFactory {
     }
 
     function setFeeTo(address _feeTo) external {
-        require(msg.sender == feeSetter, 'CropSwap: FORBIDDEN - only current feeSetter can update feeTo');
+        require(msg.sender == feeSetter, 'CroDefiSwap: FORBIDDEN - only current feeSetter can update feeTo');
         feeTo = _feeTo;
     }
 
     function setFeeSetter(address _feeSetter) external {
-        require(msg.sender == feeSetter, 'CropSwap: FORBIDDEN - only current feeSetter can update next feeSetter');
+        require(msg.sender == feeSetter, 'CroDefiSwap: FORBIDDEN - only current feeSetter can update next feeSetter');
         feeSetter = _feeSetter;
     }
 
     function setFeeToBasisPoint(uint _feeToBasisPoint) external {
-        require(msg.sender == feeSetter, 'CropSwap: FORBIDDEN - only current feeSetter can update feeToBasisPoint');
-        require(_feeToBasisPoint >= 0, 'CropSwap: FORBIDDEN - _feeToBasisPoint need to be bigger than or equal to 0');
-        require(_feeToBasisPoint <= totalFeeBasisPoint, 'CropSwap: FORBIDDEN - _feeToBasisPoint need to be smaller than or equal to totalFeeBasisPoint');
+        require(msg.sender == feeSetter, 'CroDefiSwap: FORBIDDEN - only current feeSetter can update feeToBasisPoint');
+        require(_feeToBasisPoint >= 0, 'CroDefiSwap: FORBIDDEN - _feeToBasisPoint need to be bigger than or equal to 0');
+        require(_feeToBasisPoint <= totalFeeBasisPoint, 'CroDefiSwap: FORBIDDEN - _feeToBasisPoint need to be smaller than or equal to totalFeeBasisPoint');
         feeToBasisPoint = _feeToBasisPoint;
     }
 
     function setTotalFeeBasisPoint(uint _totalFeeBasisPoint) external {
-        require(msg.sender == feeSetter, 'CropSwap: FORBIDDEN - only current feeSetter can update feeToBasisPoint');
-        require(_totalFeeBasisPoint >= feeToBasisPoint, 'CropSwap: FORBIDDEN - _totalFeeBasisPoint need to be bigger than or equal to feeToBasisPoint');
+        require(msg.sender == feeSetter, 'CroDefiSwap: FORBIDDEN - only current feeSetter can update feeToBasisPoint');
+        require(_totalFeeBasisPoint >= feeToBasisPoint, 'CroDefiSwap: FORBIDDEN - _totalFeeBasisPoint need to be bigger than or equal to feeToBasisPoint');
         totalFeeBasisPoint = _totalFeeBasisPoint;
     }
 }

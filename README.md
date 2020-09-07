@@ -1,4 +1,4 @@
-# Crop Swap
+# CRO Defi Swap
 
 ## Local Development
 
