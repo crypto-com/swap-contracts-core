@@ -5,8 +5,8 @@ import { deployContract } from 'ethereum-waffle'
 import { expandTo18Decimals } from './utilities'
 
 import ERC20 from '../../build/ERC20.json'
-import CropSwapFactory from '../../build/CropSwapFactory.json'
-import CropSwapPair from '../../build/CropSwapPair.json'
+import CroDefiSwapFactory from '../../build/CroDefiSwapFactory.json'
+import CroDefiSwapPair from '../../build/CroDefiSwapPair.json'
 
 interface FactoryFixture {
   factory: Contract
@@ -17,7 +17,7 @@ const overrides = {
 }
 
 export async function factoryFixture(_: Web3Provider, [wallet]: Wallet[]): Promise<FactoryFixture> {
-  const factory = await deployContract(wallet, CropSwapFactory, [wallet.address, 30, 5], overrides)
+  const factory = await deployContract(wallet, CroDefiSwapFactory, [wallet.address, 30, 5], overrides)
   return { factory }
 }
 
@@ -35,7 +35,7 @@ export async function pairFixture(provider: Web3Provider, [wallet]: Wallet[]): P
 
   await factory.createPair(tokenA.address, tokenB.address, overrides)
   const pairAddress = await factory.getPair(tokenA.address, tokenB.address)
-  const pair = new Contract(pairAddress, JSON.stringify(CropSwapPair.abi), provider).connect(wallet)
+  const pair = new Contract(pairAddress, JSON.stringify(CroDefiSwapPair.abi), provider).connect(wallet)
 
   const token0Address = (await pair.token0()).address
   const token0 = tokenA.address === token0Address ? tokenA : tokenB

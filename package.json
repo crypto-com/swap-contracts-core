@@ -1,14 +1,14 @@
 {
   "name": "@crypto-com/swap-contracts-core",
-  "description": "🎛 Core contracts for the CropSwap protocol",
+  "description": "🎛 Core contracts for the CroDefiSwap protocol",
   "version": "0.0.1",
-  "homepage": "https://cropswap.crypto.com",
+  "homepage": "https://crypto.com/defiswap",
   "repository": {
     "type": "git",
     "url": "https://github.com/crypto-com/swap-contracts-core"
   },
   "keywords": [
-    "CropSwap",
+    "CroDefiSwap",
     "ethereum",
     "core",
     "crypto.com",

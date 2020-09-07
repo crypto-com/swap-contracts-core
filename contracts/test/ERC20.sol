@@ -1,8 +1,8 @@
 pragma solidity =0.5.16;
 
-import '../CropSwapERC20.sol';
+import '../CroDefiSwapERC20.sol';
 
-contract ERC20 is CropSwapERC20 {
+contract ERC20 is CroDefiSwapERC20 {
     constructor(uint _totalSupply) public {
         _mint(msg.sender, _totalSupply);
     }

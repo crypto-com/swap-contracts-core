@@ -15,7 +15,7 @@ const overrides = {
   gasLimit: 9999999
 }
 
-describe('CropSwapPair', () => {
+describe('CroDefiSwapPair', () => {
   const provider = new MockProvider({
     hardfork: 'istanbul',
     mnemonic: 'horn horn horn horn horn horn horn horn horn horn horn horn',
@@ -103,7 +103,7 @@ describe('CropSwapPair', () => {
       await token0.transfer(pair.address, swapAmountOfToken0)
       await expect(
         pair.swap(0, swapAmountOfToken1.add(1), defaultLiquidityTakerWallet.address, '0x', overrides)
-      ).to.be.revertedWith('CropSwap: Constant product formula condition not met!')
+      ).to.be.revertedWith('CroDefiSwap: Constant product formula condition not met!')
       await pair.swap(0, swapAmountOfToken1, defaultLiquidityTakerWallet.address, '0x', overrides)
     })
   })
@@ -123,7 +123,7 @@ describe('CropSwapPair', () => {
       await token0.transfer(pair.address, inputAmount)
       await expect(
         pair.swap(swapAmountOfToken0.add(1), 0, defaultLiquidityTakerWallet.address, '0x', overrides)
-      ).to.be.revertedWith('CropSwap: Constant product formula condition not met!')
+      ).to.be.revertedWith('CroDefiSwap: Constant product formula condition not met!')
       await pair.swap(swapAmountOfToken0, 0, defaultLiquidityTakerWallet.address, '0x', overrides)
     })
   })
