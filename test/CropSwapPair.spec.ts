@@ -259,32 +259,33 @@ describe('CropSwapPair', () => {
     await addLiquidity(token0Amount, token1Amount, defaultLiquidityProviderWallet.address)
 
     const expectedLiquidity = expandTo18Decimals(3)
+    const MINIMUM_LIQUIDITY = 1000;
     await pair.transfer(pair.address, expectedLiquidity.sub(MINIMUM_LIQUIDITY))
     await expect(pair.burn(defaultLiquidityProviderWallet.address, overrides))
       .to.emit(pair, 'Transfer')
       .withArgs(pair.address, AddressZero, expectedLiquidity.sub(MINIMUM_LIQUIDITY))
       .to.emit(token0, 'Transfer')
-      .withArgs(pair.address, defaultLiquidityProviderWallet.address, token0Amount.sub(1000))
+      .withArgs(pair.address, defaultLiquidityProviderWallet.address, token0Amount.sub(MINIMUM_LIQUIDITY))
       .to.emit(token1, 'Transfer')
-      .withArgs(pair.address, defaultLiquidityProviderWallet.address, token1Amount.sub(1000))
+      .withArgs(pair.address, defaultLiquidityProviderWallet.address, token1Amount.sub(MINIMUM_LIQUIDITY))
       .to.emit(pair, 'Sync')
-      .withArgs(1000, 1000)
+      .withArgs(MINIMUM_LIQUIDITY, MINIMUM_LIQUIDITY)
       .to.emit(pair, 'Burn')
       .withArgs(
-        defaultLiquidityProviderWallet.address,
-        token0Amount.sub(1000),
-        token1Amount.sub(1000),
+        defaultLiquidityProviderWallet.address, // not that in real set up, msg.sender can be swap factory
+        token0Amount.sub(MINIMUM_LIQUIDITY),
+        token1Amount.sub(MINIMUM_LIQUIDITY),
         defaultLiquidityProviderWallet.address
       )
 
     expect(await pair.balanceOf(defaultLiquidityProviderWallet.address)).to.eq(0)
     expect(await pair.totalSupply()).to.eq(MINIMUM_LIQUIDITY)
-    expect(await token0.balanceOf(pair.address)).to.eq(1000)
-    expect(await token1.balanceOf(pair.address)).to.eq(1000)
+    expect(await token0.balanceOf(pair.address)).to.eq(MINIMUM_LIQUIDITY)
+    expect(await token1.balanceOf(pair.address)).to.eq(MINIMUM_LIQUIDITY)
     const totalSupplyToken0 = await token0.totalSupply()
     const totalSupplyToken1 = await token1.totalSupply()
-    expect(await token0.balanceOf(defaultLiquidityProviderWallet.address)).to.eq(totalSupplyToken0.sub(1000))
-    expect(await token1.balanceOf(defaultLiquidityProviderWallet.address)).to.eq(totalSupplyToken1.sub(1000))
+    expect(await token0.balanceOf(defaultLiquidityProviderWallet.address)).to.eq(totalSupplyToken0.sub(MINIMUM_LIQUIDITY))
+    expect(await token1.balanceOf(defaultLiquidityProviderWallet.address)).to.eq(totalSupplyToken1.sub(MINIMUM_LIQUIDITY))
   })
 
   it('price{0,1}CumulativeLast', async () => {
@@ -322,21 +323,69 @@ describe('CropSwapPair', () => {
     expect((await pair.getReserves())[2]).to.eq(blockTimestamp + 20)
   })
 
-  it('When feeTo:off, all fee should go to liquidity providers.', async () => {
-    const liquidityProviderAddress = defaultLiquidityProviderWallet.address
+  it.only('When feeTo:off, all fee should go to liquidity providers.', async () => {
+    console.log(`before providing liquidity: await token0.balanceOf(provider.address): ${await token0.balanceOf(defaultLiquidityProviderWallet.address)}`)
+    console.log(`before providing liquidity: await token1.balanceOf(provider.address): ${await token1.balanceOf(defaultLiquidityProviderWallet.address)}`)
+    console.log(`before providing liquidity: await token0.balanceOf(pair.address): ${await token0.balanceOf(pair.address)}`)
+    console.log(`before providing liquidity: await token1.balanceOf(pair.address): ${await token1.balanceOf(pair.address)}`)
+    console.log(`before providing liquidity: await token0.balanceOf(taker.address): ${await token0.balanceOf(defaultLiquidityTakerWallet.address)}`)
+    console.log(`before providing liquidity: await token1.balanceOf(taker.address): ${await token1.balanceOf(defaultLiquidityTakerWallet.address)}`)
 
     const token0Amount = expandTo18Decimals(1000)
     const token1Amount = expandTo18Decimals(1000)
-    await addLiquidity(token0Amount, token1Amount, liquidityProviderAddress)
+    await addLiquidity(token0Amount, token1Amount, defaultLiquidityProviderWallet.address)
+
+
+    console.log(`after addLiquidity & before transfer swapAmount: await token0.balanceOf(provider.address): ${await token0.balanceOf(defaultLiquidityProviderWallet.address)}`)
+    console.log(`after addLiquidity & before transfer swapAmount: await token1.balanceOf(provider.address): ${await token1.balanceOf(defaultLiquidityProviderWallet.address)}`)
+    console.log(`after addLiquidity & before transfer swapAmount: await token0.balanceOf(pair.address): ${await token0.balanceOf(pair.address)}`)
+    console.log(`after addLiquidity & before transfer swapAmount: await token1.balanceOf(pair.address): ${await token1.balanceOf(pair.address)}`)
+    console.log(`after addLiquidity & before transfer swapAmount: await token0.balanceOf(taker.address): ${await token0.balanceOf(defaultLiquidityTakerWallet.address)}`)
+    console.log(`after addLiquidity & before transfer swapAmount: await token1.balanceOf(taker.address): ${await token1.balanceOf(defaultLiquidityTakerWallet.address)}`)
+
 
     const swapAmount = expandTo18Decimals(1)
-    const expectedOutputAmount = bigNumberify('996006981039903216')
     await token1.transfer(pair.address, swapAmount)
-    await pair.swap(expectedOutputAmount, 0, liquidityProviderAddress, '0x', overrides)
+
+    console.log(`after transfer swapAmount & before swap token0 out to taker: await token0.balanceOf(provider.address): ${await token0.balanceOf(defaultLiquidityProviderWallet.address)}`)
+    console.log(`after transfer swapAmount & before swap token0 out to taker: await token1.balanceOf(provider.address): ${await token1.balanceOf(defaultLiquidityProviderWallet.address)}`)
+    console.log(`after transfer swapAmount & before swap token0 out to taker: await token0.balanceOf(pair.address): ${await token0.balanceOf(pair.address)}`)
+    console.log(`after transfer swapAmount & before swap token0 out to taker: await token1.balanceOf(pair.address): ${await token1.balanceOf(pair.address)}`)
+    console.log(`after transfer swapAmount & before swap token0 out to taker: await token0.balanceOf(taker.address): ${await token0.balanceOf(defaultLiquidityTakerWallet.address)}`)
+    console.log(`after transfer swapAmount & before swap token0 out to taker: await token1.balanceOf(taker.address): ${await token1.balanceOf(defaultLiquidityTakerWallet.address)}`)
+
+    const expectedOutputAmountOfToken0 = bigNumberify('996006981039903216')
+    const expectedOutputAmountOfToken1 = bigNumberify('0')
+    await pair.swap(expectedOutputAmountOfToken0, expectedOutputAmountOfToken1, defaultLiquidityTakerWallet.address, '0x', overrides)
+
+    expect(await token0.balanceOf(defaultLiquidityTakerWallet.address)).to.eq(expectedOutputAmountOfToken0, 'taker balance of token 0 should increment by expectedOutputAmountOfToken0 after successful swap')
+
+    console.log(`after swap token0 out & before transfer min: await token0.balanceOf(provider.address): ${await token0.balanceOf(defaultLiquidityProviderWallet.address)}`)
+    console.log(`after swap token0 out & before transfer min: await token1.balanceOf(provider.address): ${await token1.balanceOf(defaultLiquidityProviderWallet.address)}`)
+    console.log(`after swap token0 out & before transfer min: await token0.balanceOf(pair.address): ${await token0.balanceOf(pair.address)}`)
+    console.log(`after swap token0 out & before transfer min: await token1.balanceOf(pair.address): ${await token1.balanceOf(pair.address)}`)
+    console.log(`after swap token0 out & before transfer min: await token0.balanceOf(taker.address): ${await token0.balanceOf(defaultLiquidityTakerWallet.address)}`)
+    console.log(`after swap token0 out & before transfer min: await token1.balanceOf(taker.address): ${await token1.balanceOf(defaultLiquidityTakerWallet.address)}`)
 
     const expectedLiquidity = expandTo18Decimals(1000)
     await pair.transfer(pair.address, expectedLiquidity.sub(MINIMUM_LIQUIDITY))
-    await pair.burn(liquidityProviderAddress, overrides)
+
+    console.log(`after transfer min liquidity & before burn: await token0.balanceOf(provider.address): ${await token0.balanceOf(defaultLiquidityProviderWallet.address)}`)
+    console.log(`after transfer min liquidity & before burn: await token1.balanceOf(provider.address): ${await token1.balanceOf(defaultLiquidityProviderWallet.address)}`)
+    console.log(`after transfer min liquidity & before burn: await token0.balanceOf(pair.address): ${await token0.balanceOf(pair.address)}`)
+    console.log(`after transfer min liquidity & before burn: await token1.balanceOf(pair.address): ${await token1.balanceOf(pair.address)}`)
+    console.log(`after transfer min liquidity & before burn: await token0.balanceOf(taker.address): ${await token0.balanceOf(defaultLiquidityTakerWallet.address)}`)
+    console.log(`after transfer min liquidity & before burn: await token1.balanceOf(taker.address): ${await token1.balanceOf(defaultLiquidityTakerWallet.address)}`)
+
+    await pair.burn(defaultLiquidityProviderWallet.address, overrides)
+
+    console.log(`after swap & burn: await token0.balanceOf(provider.address): ${await token0.balanceOf(defaultLiquidityProviderWallet.address)}`)
+    console.log(`after swap & burn: await token1.balanceOf(provider.address): ${await token1.balanceOf(defaultLiquidityProviderWallet.address)}`)
+    console.log(`after swap & burn: await token0.balanceOf(pair.address): ${await token0.balanceOf(pair.address)}`)
+    console.log(`after swap & burn: await token1.balanceOf(pair.address): ${await token1.balanceOf(pair.address)}`)
+    console.log(`after swap & burn: await token0.balanceOf(taker.address): ${await token0.balanceOf(defaultLiquidityTakerWallet.address)}`)
+    console.log(`after swap & burn: await token1.balanceOf(taker.address): ${await token1.balanceOf(defaultLiquidityTakerWallet.address)}`)
+
     expect(await pair.totalSupply()).to.eq(MINIMUM_LIQUIDITY)
   })
 
