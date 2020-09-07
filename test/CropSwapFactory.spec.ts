@@ -31,9 +31,9 @@ describe('CropSwapFactory', () => {
     factory = fixture.factory
   })
 
-  it('feeTo, feeToSetter, allPairsLength', async () => {
+  it('feeTo, feeSetter, allPairsLength', async () => {
     expect(await factory.feeTo()).to.eq(AddressZero)
-    expect(await factory.feeToSetter()).to.eq(wallet.address)
+    expect(await factory.feeSetter()).to.eq(wallet.address)
     expect(await factory.allPairsLength()).to.eq(0)
   })
 
@@ -68,7 +68,7 @@ describe('CropSwapFactory', () => {
   it('createPair:gas', async () => {
     const tx = await factory.createPair(...TEST_ADDRESSES)
     const receipt = await tx.wait()
-    expect(receipt.gasUsed).to.eq(2509920)
+    expect(receipt.gasUsed).to.eq(2585002)
   })
 
   it('setFeeTo', async () => {
@@ -77,10 +77,10 @@ describe('CropSwapFactory', () => {
     expect(await factory.feeTo()).to.eq(wallet.address)
   })
 
-  it('setFeeToSetter', async () => {
-    await expect(factory.connect(other).setFeeToSetter(other.address)).to.be.revertedWith('CropSwap: FORBIDDEN')
-    await factory.setFeeToSetter(other.address)
-    expect(await factory.feeToSetter()).to.eq(other.address)
-    await expect(factory.setFeeToSetter(wallet.address)).to.be.revertedWith('CropSwap: FORBIDDEN')
+  it('setFeeSetter', async () => {
+    await expect(factory.connect(other).setFeeSetter(other.address)).to.be.revertedWith('CropSwap: FORBIDDEN')
+    await factory.setFeeSetter(other.address)
+    expect(await factory.feeSetter()).to.eq(other.address)
+    await expect(factory.setFeeSetter(wallet.address)).to.be.revertedWith('CropSwap: FORBIDDEN')
   })
 })
