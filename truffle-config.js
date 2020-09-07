@@ -26,6 +26,7 @@ module.exports = {
     ropsten: {
       provider: infuraProvider("ropsten"),
       network_id: "3",
+      gas: 6000000,
       gasPrice: 5000000000, // 5 gwei
     }
   },
