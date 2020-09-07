@@ -2,7 +2,7 @@
   "name": "@crypto-com/swap-contracts-core",
   "description": "🎛 Core contracts for the CroDefiSwap protocol",
   "version": "0.0.1",
-  "homepage": "https://crypto.com/defiswap",
+  "homepage": "https://crypto.com/defi/swap",
   "repository": {
     "type": "git",
     "url": "https://github.com/crypto-com/swap-contracts-core"
