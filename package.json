@@ -31,14 +31,16 @@
   "scripts": {
     "lint": "yarn prettier ./test/*.ts --check",
     "lint:fix": "yarn prettier ./test/*.ts --write",
-    "clean": "rimraf ./build/",
+    "clean": "rimraf ./build/ && rimraf ./cache/",
     "precompile": "yarn clean",
     "compile": "waffle .waffle.json",
     "pretest": "yarn compile",
     "test": "mocha",
     "prepublishOnly": "yarn test",
+    "truffle-compile": "./node_modules/.bin/truffle compile",
     "truffle-migrate": "./node_modules/.bin/truffle migrate --reset;",
-    "truffle-migrate-ropsten": "./node_modules/.bin/truffle migrate --reset --network ropsten"
+    "truffle-migrate-ropsten": "./node_modules/.bin/truffle migrate --reset --network ropsten",
+    "replace-factory": "node ./scripts/replaceFactory.js"
   },
   "dependencies": {
     "truffle": "5.1.42"
