@@ -22,3 +22,9 @@ The following assumes the use of `node@>=10`.
 ## Run Tests
 
 `yarn test`
+
+## Steps to deploy
+`yarn compile`  
+`yarn truffle-compile`  
+`yarn replace-factory`  
+`yarn truffle-migrate` OR `yarn truffle-migrate-ropsten`

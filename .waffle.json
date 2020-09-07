@@ -20,5 +20,6 @@
       "enabled": true,
       "runs": 999999
     }
-  }
+  },
+  "outputDirectory": "./build/waffle"
 }
