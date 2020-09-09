@@ -250,7 +250,7 @@ describe('CroDefiSwapPair', () => {
     await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
     const tx = await pair.swap(expectedOutputAmount, 0, defaultLiquidityProviderWallet.address, '0x', overrides)
     const receipt = await tx.wait()
-    expect(receipt.gasUsed).to.eq(76962)
+    expect(receipt.gasUsed).to.eq(76984)
   })
 
   it('burn', async () => {
@@ -443,7 +443,9 @@ describe('CroDefiSwapPair', () => {
 
   // TODO make fees and number metrics configurable
   it('When feeTo:on, 5 bps of fees should go to feeToAddress, the rest 25 bps still go to liquidity providers', async () => {
-    await factory.setFeeTo(defaultFeeToWallet.address)
+    await expect(factory.setFeeTo(defaultFeeToWallet.address))
+      .to.emit(factory, 'FeeToUpdated')
+      .withArgs(defaultFeeToWallet.address, AddressZero)
 
     const swapAmountIntoPoolInToken1 = expandTo18Decimals(1)
     await token1.transfer(defaultLiquidityTakerWallet.address, swapAmountIntoPoolInToken1.mul(2)) // add some buffer to avoid underflow
