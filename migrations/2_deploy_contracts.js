@@ -1,6 +1,12 @@
-const CroDefiSwapFactory = artifacts.require("CroDefiSwapFactory");
+const CroDefiSwapFactory = artifacts.require('CroDefiSwapFactory')
 
-module.exports = function(deployer, network, accounts) {
-	console.log("Deploying to Address[0]:", accounts[0], typeof accounts[0]);
-	deployer.deploy(CroDefiSwapFactory, accounts[0].toString(), 30, 5);
-};
+module.exports = async function(deployer, network, accounts) {
+  let feeSetter
+  if (network === 'mainnet') {
+    feeSetter = '0x3459e5cb6be361b4f52dA94173Dc8d216013C57a'
+  } else {
+    feeSetter = accounts[0].toString()
+  }
+  await deployer.deploy(CroDefiSwapFactory, feeSetter, 30, 5)
+  console.log(`Deployed CroDefiSwapFactory on network ${network} with ${feeSetter} as feeSetter`)
+}

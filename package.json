@@ -40,6 +40,7 @@
     "truffle-compile": "./node_modules/.bin/truffle compile",
     "truffle-migrate": "./node_modules/.bin/truffle migrate --reset;",
     "truffle-migrate-ropsten": "./node_modules/.bin/truffle migrate --reset --network ropsten",
+    "truffle-migrate-mainnet": "./node_modules/.bin/truffle migrate --reset --network mainnet",
     "replace-factory": "node ./scripts/replaceFactory.js"
   },
   "dependencies": {
