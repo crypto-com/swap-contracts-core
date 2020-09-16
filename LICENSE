@@ -1,12 +1,9 @@
- DeFi Swap
-    Copyright (C) 2020 Foris Limited ("Crypto.com")
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, version 3 of the License.
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-Contact: contact@crypto.com
+DeFi Swap
+	Copyright (C) 2020 Uniswap
+Modifications Copyright (C) 2020 Foris Limited ("Crypto.com")
+Everyone is permitted to copy and distribute verbatim copies of this license document, but changing it is not allowed.
+	    This program is free software released under the GNU General Public License as published by the Free Software Foundation, version 3 of the License and any conditions added under section 7 of the License. You can redistribute it and/or modify it under the terms of the GNU General Public License.
+	The modifications in this program are as follows: (i) change in user interface, addition of new tabs, modification of contracts addresses, removal of references to name of the original protocol and inclusion of DeFi Swap SDK in the interface; (ii) change in user interface and references to Crypto.com subgraphs in the analytics; (iii) change of the allowed token list; (iv) renaming and continuous improvement or deployment script changes; (v) polishing of unit test; and (vi) making fees configurable.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+	    You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
+	Contact: contact@crypto.com
