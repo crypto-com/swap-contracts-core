@@ -1,0 +1,41 @@
+name: "CodeQL"
+
+on:
+  push:
+    branches: [ "develop", "SWAP-33-security", "dependabot/npm_and_yarn/ajv-6.12.6", "dependabot/npm_and_yarn/bl-1.2.3", "dependabot/npm_and_yarn/copy-props-2.0.5", "dependabot/npm_and_yarn/hosted-git-info-2.8.9", "dependabot/npm_and_yarn/normalize-url-4.5.1", "dependabot/npm_and_yarn/path-parse-1.0.7", "dependabot/npm_and_yarn/pathval-1.1.1", "dependabot/npm_and_yarn/tar-4.4.19", "dependabot/npm_and_yarn/y18n-3.2.2", "dependabot/npm_and_yarn/yargs-parser-5.0.1", "feature/SWAP-1-Enforce-JIRA-Number", "feature/SWAP-2-Continuous-Delivery", "feature/SWAP-5-configurable-fee", "feature/SWAP-8-enable-ci-cd", "feature/SWAP-11-security-scanner", "feature/SWAP-29-rename-again", "feature/SWAP-29-rename-to-crop", "feature/SWAP-32-Kovan-support", "master", "staging" ]
+  pull_request:
+    branches: [ "develop" ]
+  schedule:
+    - cron: "17 1 * * 2"
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ javascript ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: ${{ matrix.language }}
+          queries: +security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:${{ matrix.language }}"
